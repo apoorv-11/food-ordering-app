@@ -1,0 +1,33 @@
+{
+  "name": "canteen-backend",
+  "version": "1.0.0",
+  "description": "Canteen Food Ordering System built with Node.js, Express, and MongoDB",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "keywords": [
+    "canteen",
+    "nodejs",
+    "express",
+    "mongodb",
+    "mern"
+  ],
+  "author": "Apoorv Prasad",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.18.2",
+    "joi": "^17.9.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^7.8.0",
+    "multer": "^1.4.5-lts.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.11"
+  }
+}
