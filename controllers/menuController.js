@@ -71,14 +71,14 @@ exports.getMenuItems = async (req, res) => {
 // READ: Get single menu item
 exports.getMenuItemById = async (req, res) => {
   try {
-    const { menuId } = req.params;
+    const { _id } = req.params;
 
-    const menuItem = await MenuItem.findOne({ menuId });
+    const menuItem = await MenuItem.findById(_id);
 
     if (!menuItem) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Menu item not found' 
+      return res.status(404).json({
+        success: false,
+        message: 'Menu item not found'
       });
     }
 
@@ -87,13 +87,14 @@ exports.getMenuItemById = async (req, res) => {
       data: menuItem
     });
   } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to fetch menu item', 
-      error: error.message 
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch menu item',
+      error: error.message
     });
   }
 };
+
 
 // UPDATE: Edit menu item (Admin only)
 exports.updateMenuItem = async (req, res) => {
@@ -131,10 +132,10 @@ exports.updateMenuItem = async (req, res) => {
 // DELETE: Mark menu item unavailable (Soft delete - Admin only)
 exports.deleteMenuItem = async (req, res) => {
   try {
-    const { menuId } = req.params;
+    const { _id } = req.params;
 
     const menuItem = await MenuItem.findOneAndUpdate(
-      { menuId },
+      { _id },
       { available: false },
       { new: true }
     );

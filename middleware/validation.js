@@ -39,31 +39,48 @@ const schemas = {
   }).strict(),
 
   createOrder: Joi.object({
-    items: Joi.array().items(
-      Joi.object({
-        menuId: Joi.string().pattern(objectIdPattern).required(),
-        quantity: Joi.number().integer().positive().required()
-      })
-    ).min(1).required(),
-    pickupTime: Joi.string()
-  .pattern(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/)
+  items: Joi.array().items(
+    Joi.object({
+      menuId: Joi.string().pattern(objectIdPattern).required(),
+      quantity: Joi.number().integer().positive().required()
+    })
+  ).min(1).required(),
+
+  // Accept strict ISO 8601 UTC only (e.g., 2025-11-17T10:30:00Z)
+  pickupTime: Joi.string()
+  .pattern(
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?(\.\d+)?Z$/
+  )
   .required()
   .messages({
-    "string.pattern.base": "pickupTime must be in format YYYY-MM-DDTHH:mm:ss"
+    "string.pattern.base": "pickupTime must be ISO 8601 UTC, e.g. 2025-11-17T10:30:00Z"
   }),
-    specialInstr: Joi.string().trim().max(500).optional()
-  }).strict(),
 
-  updateOrder: Joi.object({
-    items: Joi.array().items(
-      Joi.object({
-        menuId: Joi.string().pattern(objectIdPattern).required(),
-        quantity: Joi.number().integer().positive().required()
-      })
-    ).min(1).optional(),
-    pickupTime: Joi.date().iso().optional(),
-    specialInstr: Joi.string().trim().max(500).optional()
-  }).strict()
+
+
+  specialInstr: Joi.string().trim().max(500).optional()
+}).strict(),
+
+updateOrder: Joi.object({
+  items: Joi.array().items(
+    Joi.object({
+      menuId: Joi.string().pattern(objectIdPattern).required(),
+      quantity: Joi.number().integer().positive().required()
+    })
+  ).min(1).optional(),
+
+  // Accept strict ISO 8601 UTC only (e.g., 2025-11-17T10:30:00Z)
+  pickupTime: Joi.string()
+  .pattern(
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?(\.\d+)?Z$/
+  )
+  .required()
+  .messages({
+    "string.pattern.base": "pickupTime must be ISO 8601 UTC, e.g. 2025-11-17T10:30:00Z"
+  }),
+
+  specialInstr: Joi.string().trim().max(500).optional()
+}).strict()
 };
 
 // Generic validation middleware

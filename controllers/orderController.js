@@ -5,57 +5,60 @@ const MenuItem = require('../models/MenuItem');
 // CREATE: Place new order (Student)
 exports.createOrder = async (req, res) => {
   try {
-    const { items, pickupTime, specialInstr } = req.validated;
+    let { items, pickupTime, specialInstr } = req.validated;
     const userId = req.userId;
 
+    // STORE: Expect pickupTime as UTC ISO string (e.g., 2025-11-17T10:30:00Z)
+    const finalPickupTime = new Date(pickupTime);
+    if (isNaN(finalPickupTime.getTime())) {
+      return res.status(400).json({
+        success: false,
+        message: "pickupTime must be a valid UTC ISO 8601 string",
+      });
+    }
+
+    // ... rest of your code, unchanged ...
     let totalAmount = 0;
     const orderItemsData = [];
 
     for (const item of items) {
-      // Find using _id now
       const menuItem = await MenuItem.findById(item.menuId);
 
       if (!menuItem) {
         return res.status(404).json({
           success: false,
-          message: `Menu item with ID ${item.menuId} not found`
+          message: `Menu item with ID ${item.menuId} not found`,
         });
       }
-
       if (!menuItem.available) {
         return res.status(400).json({
           success: false,
-          message: `Menu item ${menuItem.name} is not available`
+          message: `Menu item ${menuItem.name} is not available`,
         });
       }
-
       totalAmount += menuItem.price * item.quantity;
-
       orderItemsData.push({
-        menuId: menuItem.menuId,   // store the MongoDB _id
+        menuId: menuItem._id,
         quantity: item.quantity,
-        price: menuItem.price
+        price: menuItem.price,
       });
     }
 
-    // Create order
     const newOrder = new Order({
       userId,
       totalAmount,
-      status: 'placed',
-      pickupTime,
-      specialInstr: specialInstr || ''
+      status: "placed",
+      pickupTime: finalPickupTime,
+      specialInstr: specialInstr || "",
     });
-
     await newOrder.save();
 
-    // Create each order item
     for (const itemData of orderItemsData) {
       const newOrderItem = new OrderItem({
-        orderId: newOrder._id,  // use order _id
+        orderId: newOrder._id,
         menuId: itemData.menuId,
         quantity: itemData.quantity,
-        price: itemData.price
+        price: itemData.price,
       });
       await newOrderItem.save();
     }
@@ -63,14 +66,13 @@ exports.createOrder = async (req, res) => {
     res.status(201).json({
       success: true,
       message: "Order placed successfully",
-      data: newOrder
+      data: newOrder,
     });
-
   } catch (error) {
     res.status(500).json({
       success: false,
       message: "Failed to place order",
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -93,7 +95,7 @@ exports.getUserOrders = async (req, res) => {
     // Fetch order items for each order
     const ordersWithItems = await Promise.all(
       orders.map(async (order) => {
-        const orderItems = await OrderItem.find({ orderId: order.orderId })
+        const orderItems = await OrderItem.find({ orderId: order._id })
           .populate('menuId');
         return {
           ...order.toObject(),
@@ -210,12 +212,12 @@ exports.getOrderById = async (req, res) => {
 // UPDATE: Edit order (Before preparation - Student only)
 exports.updateOrder = async (req, res) => {
   try {
-    const { orderId } = req.params;
+    const { _id } = req.params;
     const { items, pickupTime, specialInstr } = req.validated;
     const userId = req.userId;
 
     // Find order
-    const order = await Order.findOne({ orderId });
+    const order = await Order.findOne({ _id });
 
     if (!order) {
       return res.status(404).json({ 
@@ -301,25 +303,23 @@ exports.updateOrderStatus = async (req, res) => {
     const { orderId } = req.params;
     const { status } = req.body;
 
-    // Validate status
     const validStatuses = ['placed', 'preparing', 'ready', 'completed', 'canceled'];
     if (!validStatuses.includes(status)) {
-      return res.status(400).json({ 
-        success: false, 
-        message: `Invalid status. Must be one of: ${validStatuses.join(', ')}` 
+      return res.status(400).json({
+        success: false,
+        message: `Invalid status. Must be one of: ${validStatuses.join(', ')}`
       });
     }
 
-    const order = await Order.findOne({ orderId });
+    const order = await Order.findById(orderId);
 
     if (!order) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Order not found' 
+      return res.status(404).json({
+        success: false,
+        message: 'Order not found'
       });
     }
 
-    // Validate state transition
     const allowedTransitions = {
       'placed': ['preparing', 'canceled'],
       'preparing': ['ready', 'canceled'],
@@ -329,16 +329,16 @@ exports.updateOrderStatus = async (req, res) => {
     };
 
     if (!allowedTransitions[order.status].includes(status)) {
-      return res.status(409).json({ 
-        success: false, 
-        message: `Cannot transition from ${order.status} to ${status}` 
+      return res.status(409).json({
+        success: false,
+        message: `Cannot transition from ${order.status} to ${status}`
       });
     }
 
-    // Update timestamps
     if (status === 'preparing' && !order.startedAt) {
       order.startedAt = new Date();
     }
+
     if (status === 'completed') {
       order.completedAt = new Date();
     }
@@ -351,11 +351,12 @@ exports.updateOrderStatus = async (req, res) => {
       message: 'Order status updated successfully',
       data: order
     });
+
   } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to update order status', 
-      error: error.message 
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update order status',
+      error: error.message
     });
   }
 };

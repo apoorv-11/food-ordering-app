@@ -23,7 +23,9 @@ const orderSchema = new mongoose.Schema({
   },
   pickupTime: { 
     type: Date,
-    required: true
+    required: true,
+    timezone: 'Asia/Kolkata',
+    timestamp: true
   },
   specialInstr: { 
     type: String,
